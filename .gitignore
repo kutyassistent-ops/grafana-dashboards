@@ -1,0 +1,9 @@
+# Grafana
+# Экспорты делаются вручную через UI/API, автоматических артефактов нет.
+*.log
+*.tmp
+*.bak
+
+# Локальные правки дашбордов (Grafana пишет их в /var/lib/grafana/dashboards)
+*.local.json
+tmp/
