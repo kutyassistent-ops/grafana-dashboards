@@ -23,23 +23,29 @@ EXPECTED_KIND = "Dashboard"
 
 
 def collect_panels(spec):
-    """Панели лежат в spec.elements[0] как карта panel-<id> -> панель."""
-    elements = spec.get("elements") or []
-    if not elements:
-        return {}
-    first = elements[0]
-    return first if isinstance(first, dict) else {}
+    """Панели лежат в spec.elements как карта panel-<id> -> панель.
+
+    На разных выгрузках это либо объект-карта, либо список с одним объектом —
+    поддерживаются оба варианта.
+    """
+    elements = spec.get("elements") or {}
+    if isinstance(elements, dict):
+        return elements
+    if isinstance(elements, list):
+        for item in elements:
+            if isinstance(item, dict):
+                return item
+    return {}
 
 
 def count_rows(spec):
-    """Строки (ряды) лежат в spec.layout[0].spec.rows."""
-    layout = spec.get("layout") or []
-    if not layout:
+    """Строки (ряды) лежат в spec.layout.spec.rows (иногда layout — список)."""
+    layout = spec.get("layout") or {}
+    if isinstance(layout, list):
+        layout = layout[0] if layout else {}
+    if not isinstance(layout, dict):
         return 0
-    first = layout[0]
-    if not isinstance(first, dict):
-        return 0
-    inner = first.get("spec") or {}
+    inner = layout.get("spec") or {}
     if not isinstance(inner, dict):
         return 0
     return len(inner.get("rows") or [])
