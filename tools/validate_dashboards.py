@@ -32,15 +32,17 @@ def collect_panels(spec):
 
 
 def count_rows(spec):
+    """Строки (ряды) лежат в spec.layout[0].spec.rows."""
     layout = spec.get("layout") or []
     if not layout:
         return 0
     first = layout[0]
-    if isinstance(first, dict):
-        inner = first.get("spec") or {}
-        if isinstance(inner, dict):
-            return len(inner.get("elements") or [])
-    return 0
+    if not isinstance(first, dict):
+        return 0
+    inner = first.get("spec") or {}
+    if not isinstance(inner, dict):
+        return 0
+    return len(inner.get("rows") or [])
 
 
 def validate(path):
@@ -78,7 +80,8 @@ def validate(path):
 
     variables = spec.get("variables") or []
     for var in variables:
-        if not var.get("name"):
+        inner = var.get("spec") or {}
+        if not inner.get("name"):
             problems.append("переменная без имени: %r" % var)
 
     summary = {
@@ -87,6 +90,7 @@ def validate(path):
         "panels": len(panels),
         "rows": count_rows(spec),
         "variables": len(variables),
+        "var_names": [((v.get("spec") or {}).get("name", "?")) for v in variables],
     }
     return problems, summary
 
@@ -100,8 +104,8 @@ def main():
         return 1
 
     failed = False
-    print("%-22s %-34s %6s %5s %5s" % ("UID", "Заголовок", "Панелей", "Строк", "Перем."))
-    print("-" * 78)
+    print("%-22s %-34s %6s %5s %5s  %s" % ("UID", "Заголовок", "Панелей", "Строк", "Перем.", "Переменные"))
+    print("-" * 96)
 
     for path in files:
         rel = path.relative_to(REPO)
@@ -113,17 +117,18 @@ def main():
                 print("        - %s" % problem)
         else:
             print(
-                "%-22s %-34s %6d %5d %5d"
+                "%-22s %-34s %6d %5d %5d  %s"
                 % (
                     summary["uid"],
                     summary["title"][:33],
                     summary["panels"],
                     summary["rows"],
                     summary["variables"],
+                    ", ".join(summary["var_names"]) or "-",
                 )
             )
 
-    print("-" * 78)
+    print("-" * 96)
     print("Проверено файлов: %d" % len(files))
     if failed:
         print("Есть ошибки")
