@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Проверка дашбордов
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Разобрать и проверить дашборды
+        run: python tools/validate_dashboards.py
+
+      - name: Убедиться, что нет файлов базы данных и секретов
+        run: |
+          if git ls-files | grep -E '\.(db|sqlite|pem|key)$'; then
+            echo "::error::В репозитории найдены файлы с данными или ключами"
+            exit 1
+          fi
+          echo "Файлов с данными и ключами нет"
